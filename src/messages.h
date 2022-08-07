@@ -1,6 +1,8 @@
+#pragma once
+
 #include <cstdint>
 
-struct Header
+struct __attribute__((__packed__)) Header
 {
   uint8_t sync[3];
   uint8_t header_len;
@@ -18,7 +20,7 @@ struct Header
   uint16_t version;
 };
 
-struct BestPos
+struct __attribute__((__packed__)) BestPos
 {
   uint32_t sol_stat;
   uint32_t pos_type;
@@ -43,7 +45,7 @@ struct BestPos
   uint8_t gps_glon_mask;
 };
 
-struct BestVel
+struct __attribute__((__packed__)) BestVel
 {
   uint32_t sol_stat;
   uint32_t vel_type;
@@ -55,13 +57,12 @@ struct BestVel
   float _;
 };
 
-struct Time
+struct __attribute__((__packed__)) Time
 {
   uint32_t clk_stat;
-  /*double offset;
+  double offset;
   double offset_stdev;
-  double utc_offset;*/
-  uint32_t _ [6];
+  double utc_offset;
   uint32_t utc_year;
   uint8_t utc_month;
   uint8_t utc_day;

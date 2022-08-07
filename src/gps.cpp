@@ -31,7 +31,6 @@ bool GPS::ingest(uint8_t byte) {
       break;
     case 5:
       message_id = *((uint16_t*)(buf+4));
-      QTextStream(stdout) << message_id << endl;
       break;
     case 9:
       message_len = *((uint16_t*)(buf+8));
@@ -67,6 +66,6 @@ BestVel GPS::parse_bestvel() {
 }
 
 Time GPS::parse_time() {
-  Time msg = *((Time*)(buf+header_len));
+  Time msg = *((Time*)(buf+header_len+4));
   return msg;
 }
