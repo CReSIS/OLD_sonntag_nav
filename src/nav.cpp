@@ -2,8 +2,11 @@
 
 Nav::Nav(QString host, int port, QObject *parent) : QObject(parent) {
   socket = new QTcpSocket(this);
+  QTextStream(stdout) << "Trying to connect to " << host << ": " << port << "\n";
   socket->connectToHost(host, port);
+  QTextStream(stdout) << "waitForConnected\n";
   socket->waitForConnected();
+  QTextStream(stdout) << "Connected\n";
 }
 
 void Nav::update(BestPos pos) {
@@ -29,6 +32,7 @@ void Nav::send() {
       );
     socket->write(output.toUtf8());
   } else {
-    throw "socket not connected";
+  QTextStream(stdout) << "Not connected yet\n";
+    //throw std::range_error("TCP socket not connected");
   }
 }
