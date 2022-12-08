@@ -1,6 +1,7 @@
 //
 // To avoid having to type password in:
-// sudo chmod a+rwx ./sonntag_nav; sudo chown root:root ./sonntag_nav; sudo chmod u+s ./sonntag_nav;
+// sudo chmod a+rwx /arena/sonntag_nav/sonntag_nav; sudo chown root:root /arena/sonntag_nav/sonntag_nav; sudo chmod u+s /arena/sonntag_nav/sonntag_nav;
+// sudo chmod a+rwx /bin/date; sudo chown root:root /bin/date; sudo chmod u+s /bin/date;
 // 
 
 #include <QTextStream>
@@ -90,7 +91,7 @@ void loop() {
 
                 QTextStream(stdout) << "**************** SETTING SYSTEM DATE AND TIME TO GPS TIME **************" << "\n";
                 QString set_date_cmd;
-                set_date_cmd = QString("sudo date -u -s \"%1/%2/%3 %4:%5:%6\"")
+                set_date_cmd = QString("date -u -s \"%1/%2/%3 %4:%5:%6\"")
                         .arg((char)time.utc_month,2,10,QLatin1Char('0'))
                         .arg((char)time.utc_day,2,10,QLatin1Char('0'))
                         .arg((int)time.utc_year,4,10,QLatin1Char('0'))
