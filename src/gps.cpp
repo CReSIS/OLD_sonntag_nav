@@ -10,6 +10,7 @@ bool GPS::ingest(uint8_t byte) {
   switch (state)
   {
   case Idle:
+    message_id = 0;
     if (byte == 0xAA) state = Byte_AA;
     break;
   case Byte_AA:
@@ -27,6 +28,7 @@ bool GPS::ingest(uint8_t byte) {
     switch (byte_index)
     {
     case 3:
+      // printf("%s:%d: new message\n", __FILE__, __LINE__);
       header_len = byte;
       break;
     case 5:
@@ -66,6 +68,6 @@ BestVel GPS::parse_bestvel() {
 }
 
 Time GPS::parse_time() {
-  Time msg = *((Time*)(buf+header_len+4));
+  Time msg = *((Time*)(buf+header_len));
   return msg;
 }
