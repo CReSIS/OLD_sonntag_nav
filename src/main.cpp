@@ -33,7 +33,7 @@ void loop() {
     uint8_t byte;
     serial->read((char*)&byte, 1);
 
-    if (time_valid) {
+    if (time_valid > 5) {
       std::ofstream fout;
       fout.open(filename.toLocal8Bit().constData(), std::ios::binary | std::ios::app);
       fout.write((char*)&byte, sizeof(byte));
@@ -43,7 +43,7 @@ void loop() {
     if (gps.ingest(byte)) {
         if (gps.get_message_id() != 0) {
             QString test;
-            if (time_valid) {
+            if (time_valid > 5) {
             //test = QString("Test %1%2%3").arg((int)2022,4,10,QLatin1Char('0')).arg(7,2,10,QLatin1Char('0')).arg(12,2,10,QLatin1Char('0'));
             //printf("FILENAME: [%s]\n", test.toLocal8Bit().constData());
             //printf("FILENAME: [%s]\n", filename.toLocal8Bit().constData());
@@ -71,10 +71,12 @@ void loop() {
           {
             Time time = gps.parse_time();
             QTextStream(stdout) << "TIME Status: " << time.utc_stat << " " << "Year: " << time.utc_year << " Month: " << time.utc_month << " Day:" << time.utc_day << " " << time.utc_hour << ":" << time.utc_min << ":" << ((double)time.utc_ms)/1000 << "\n";
-            if (time.utc_stat == 1 && time_valid == 0) {
-                time_valid = 1;
-                QTextStream(stdout) << "**************** RECORDING STARTING **************" << "\n";
-                QTextStream(stdout) << "**************** FOUND FIRST VALID TIME **************" << "\n";
+            if (time.utc_stat == 1 && time_valid < 5) {
+                time_valid++;
+            }
+            if (time.utc_stat == 1 && time_valid == 5) {
+                time_valid = 6;
+                QTextStream(stdout) << "**************** FOUND SUFFICIENT VALID TIMES TO ENSURE OLD BUFFER FLUSHED **************" << "\n";
                 filename = QString("/data/GPS_Novatel_raw_%1%2%3_%4%5%6.bin")
                         .arg((int)time.utc_year,4,10,QLatin1Char('0'))
                         .arg((char)time.utc_month,2,10,QLatin1Char('0'))
@@ -84,6 +86,7 @@ void loop() {
                         .arg((int)time.utc_ms/1000,2,10,QLatin1Char('0'));
                 //filename = QString("/data/OEM617D_Novatel_GPS_raw_%1%2%3_%4%5%6.bin").arg((int)40,4,'0').arg((char)39,2,'0').arg((char)38,2,'0').arg((char)time.utc_hour,2,'0').arg((char)time.utc_min,2,'0').arg((int)time.utc_ms/1000,2,'0');
 
+                QTextStream(stdout) << "**************** RECORDING STARTING " << filename << " **************" << "\n";
 
                 QTextStream(stdout) << "**************** SETTING SYSTEM DATE AND TIME TO GPS TIME **************" << "\n";
                 QString set_date_cmd;
@@ -175,6 +178,7 @@ int main(int argc, char *argv[]) {
 
   serial = new QSerialPort(port_system_location);
   serial->open(QIODevice::ReadWrite);
+  serial->readAll();
 
   out  << "**************** STARTING TO READ SERIAL PORT **************" << endl;
   QTimer *parseTimer = new QTimer();
