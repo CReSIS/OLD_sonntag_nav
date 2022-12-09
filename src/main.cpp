@@ -37,7 +37,7 @@ void loop() {
 
     time_t cur_time;
     time(&cur_time);
-    if (time_valid > 5 && ((double)cur_time) > ((double)last_good_time)+1.5 && cur_time > last_good_time_error + 5) {
+    if (time_valid > 5 && ((double)cur_time) > ((double)last_good_time)+2.1 && cur_time > last_good_time_error + 1) {
       QTextStream(stdout) << "\n" << "ERROR!!!!\nBAD FOR " << cur_time - last_good_time << " SECONDS." << "\n\n";
       last_good_time_error = cur_time;
     }
@@ -91,14 +91,13 @@ void loop() {
             if (time.utc_stat == 1 && time_valid == 5) {
                 time_valid = 6;
                 QTextStream(stdout) << "**************** FOUND SUFFICIENT VALID TIMES TO ENSURE OLD BUFFER FLUSHED **************" << "\n";
-                filename = QString("/data/GPS_Novatel_raw_%1%2%3_%4%5%6.bin")
+                filename = QString("/data/GPS_Novatel_raw_%1%2%3_%4%5%6.gps")
                         .arg((int)time.utc_year,4,10,QLatin1Char('0'))
                         .arg((char)time.utc_month,2,10,QLatin1Char('0'))
                         .arg((char)time.utc_day,2,10,QLatin1Char('0'))
                         .arg((char)time.utc_hour,2,10,QLatin1Char('0'))
                         .arg((char)time.utc_min,2,10,QLatin1Char('0'))
                         .arg((int)time.utc_ms/1000,2,10,QLatin1Char('0'));
-                //filename = QString("/data/OEM617D_Novatel_GPS_raw_%1%2%3_%4%5%6.bin").arg((int)40,4,'0').arg((char)39,2,'0').arg((char)38,2,'0').arg((char)time.utc_hour,2,'0').arg((char)time.utc_min,2,'0').arg((int)time.utc_ms/1000,2,'0');
 
                 QTextStream(stdout) << "**************** RECORDING STARTING " << filename << " **************" << "\n";
 
