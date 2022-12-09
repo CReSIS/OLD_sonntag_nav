@@ -16,6 +16,7 @@
 #include <fstream>
 
 #include <stdlib.h>
+#include <time.h>
 
 #include "gps.h"
 #include "nav.h"
@@ -27,9 +28,20 @@ Nav * nav;
 int time_valid;
 QString filename;
 
+time_t last_good_time = 0;
+time_t last_good_time_error = 0;
+
 //QString * timestamp;
 
 void loop() {
+
+    time_t cur_time;
+    time(&cur_time);
+    if (time_valid > 5 && ((double)cur_time) > ((double)last_good_time)+1.5 && cur_time > last_good_time_error + 5) {
+      QTextStream(stdout) << "\n" << "ERROR!!!!\nBAD FOR " << cur_time - last_good_time << " SECONDS." << "\n\n";
+      last_good_time_error = cur_time;
+    }
+
   if (serial->bytesAvailable()) {
     uint8_t byte;
     serial->read((char*)&byte, 1);
@@ -59,6 +71,7 @@ void loop() {
             QTextStream(stdout) << "BESTPOS: Lat: " << pos.latitude << " Lon: " << pos.longitude  << " Height: " << pos.height << " Solution Age: " << pos.sol_age << "\n";
             //QTextStream(stdout) << __FILE__ << ":" << __LINE__ << ": \n";
             //nav->update(pos);
+            time(&last_good_time);
           }
           break;
         case 99:
