@@ -37,7 +37,7 @@ void loop() {
 
     time_t cur_time;
     time(&cur_time);
-    if (time_valid > 5 && ((double)cur_time) > ((double)last_good_time)+2.0 && cur_time > last_good_time_error + 5) {
+    if (time_valid > 5 && ((double)cur_time) > ((double)last_good_time)+2.1 && cur_time > last_good_time_error + 1) {
       QTextStream(stdout) << "\n" << "ERROR!!!!\nBAD FOR " << cur_time - last_good_time << " SECONDS." << "\n\n";
       last_good_time_error = cur_time;
     }
