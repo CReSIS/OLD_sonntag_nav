@@ -31,13 +31,15 @@ QString filename;
 time_t last_good_time = 0;
 time_t last_good_time_error = 0;
 
+int TIME_VALID_THRESHOLD = 5;
+
 //QString * timestamp;
 
 void loop() {
 
     time_t cur_time;
     time(&cur_time);
-    if (time_valid > 5 && ((double)cur_time) > ((double)last_good_time)+2.1 && cur_time > last_good_time_error + 1) {
+    if (time_valid > TIME_VALID_THRESHOLD && ((double)cur_time) > ((double)last_good_time)+2.1 && cur_time > last_good_time_error + 1) {
       QTextStream(stdout) << "\n" << "ERROR!!!!\nBAD FOR " << cur_time - last_good_time << " SECONDS." << "\n\n";
       last_good_time_error = cur_time;
     }
@@ -46,7 +48,7 @@ void loop() {
     uint8_t byte;
     serial->read((char*)&byte, 1);
 
-    if (time_valid > 5) {
+    if (time_valid > TIME_VALID_THRESHOLD) {
       std::ofstream fout;
       fout.open(filename.toLocal8Bit().constData(), std::ios::binary | std::ios::app);
       fout.write((char*)&byte, sizeof(byte));
@@ -56,7 +58,7 @@ void loop() {
     if (gps.ingest(byte)) {
         if (gps.get_message_id() != 0) {
             QString test;
-            if (time_valid > 5) {
+            if (time_valid > TIME_VALID_THRESHOLD) {
             //test = QString("Test %1%2%3").arg((int)2022,4,10,QLatin1Char('0')).arg(7,2,10,QLatin1Char('0')).arg(12,2,10,QLatin1Char('0'));
             //printf("FILENAME: [%s]\n", test.toLocal8Bit().constData());
             //printf("FILENAME: [%s]\n", filename.toLocal8Bit().constData());
@@ -85,11 +87,11 @@ void loop() {
           {
             Time time = gps.parse_time();
             QTextStream(stdout) << "TIME Status: " << time.utc_stat << " " << "Year: " << time.utc_year << " Month: " << time.utc_month << " Day:" << time.utc_day << " " << time.utc_hour << ":" << time.utc_min << ":" << ((double)time.utc_ms)/1000 << "\n";
-            if (time.utc_stat == 1 && time_valid < 5) {
+            if (time.utc_stat == 1 && time_valid < TIME_VALID_THRESHOLD) {
                 time_valid++;
             }
-            if (time.utc_stat == 1 && time_valid == 5) {
-                time_valid = 6;
+            if (time.utc_stat == 1 && time_valid == TIME_VALID_THRESHOLD) {
+                time_valid = TIME_VALID_THRESHOLD+1;
                 QTextStream(stdout) << "**************** FOUND SUFFICIENT VALID TIMES TO ENSURE OLD BUFFER FLUSHED **************" << "\n";
                 filename = QString("/data/GPS_Novatel_raw_%1%2%3_%4%5%6.gps")
                         .arg((int)time.utc_year,4,10,QLatin1Char('0'))
@@ -132,12 +134,30 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setSetuidAllowed(true);
 
   QCoreApplication app(argc, argv);
+
+  QTextStream out(stdout);
+
+  if (argc >= 2) {
+      try {
+          TIME_VALID_THRESHOLD = QString(argv[1]).toInt();
+      } catch (void *exception) {
+          out  << "First argument interpretation failure. Setting TIME_VALID_THRESHOLD to default value of 5." << "\n";
+          TIME_VALID_THRESHOLD = 5;
+      }
+      if (TIME_VALID_THRESHOLD < 1 || TIME_VALID_THRESHOLD > 100) {
+          out  << "TIME_VALID_THRESHOLD out of range. Setting TIME_VALID_THRESHOLD to default value of 5." << "\n";
+          TIME_VALID_THRESHOLD = 5;
+      }
+  } else {
+    TIME_VALID_THRESHOLD = 5;
+  }
+  out  << "TIME_VALID_THRESHOLD: " << TIME_VALID_THRESHOLD << "\n\n";
+
   time_valid = 0;
   int port_valid = 0;
 
   QString port_system_location = "/dev/ttyUSB0";
 
-  QTextStream out(stdout);
   out  << "**************** SYSTEM SERIAL PORT INFO **************" << "\n";
         const auto serialPortInfos = QSerialPortInfo::availablePorts();
 
@@ -156,7 +176,7 @@ int main(int argc, char *argv[]) {
             serialNumber = serialPortInfo.serialNumber();
 
 
-            if (description == "Novatel GPS Receiver" && port_valid == 0) {
+            if ((description == "Novatel GPS Receiver" || description == "NovAtel GPS Receiver") && port_valid == 0) {
                 port_valid = 1;
               out << "******************** USING THIS PORT ************************" << endl;
               port_system_location = serialPortInfo.systemLocation();

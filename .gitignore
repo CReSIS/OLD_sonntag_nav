@@ -2,3 +2,7 @@
 build/
 .qmake.stash
 Makefile
+*.o
+sonntag_nav
+sonntag_nav.pro.user
+
