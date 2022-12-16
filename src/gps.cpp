@@ -67,7 +67,7 @@ BestVel GPS::parse_bestvel() {
   return msg;
 }
 
-Time GPS::parse_time() {
-  Time msg = *((Time*)(buf+header_len));
+BestTime GPS::parse_time() {
+  BestTime msg = *((BestTime*)(buf+header_len));
   return msg;
 }

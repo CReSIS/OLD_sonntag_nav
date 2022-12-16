@@ -32,5 +32,5 @@ public:
   Header parse_header();
   BestPos parse_bestpos();
   BestVel parse_bestvel();
-  Time parse_time();
+  BestTime parse_time();
 };

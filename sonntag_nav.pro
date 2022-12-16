@@ -17,5 +17,5 @@ QT += serialport \
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 # Input
-HEADERS += src/gps.h src/nav.h src/messages.h
-SOURCES += src/gps.cpp src/nav.cpp src/main.cpp
+HEADERS += src/gps.h src/messages.h
+SOURCES += src/gps.cpp src/main.cpp

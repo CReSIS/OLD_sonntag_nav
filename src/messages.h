@@ -22,52 +22,52 @@ struct __attribute__((__packed__)) Header
 
 struct __attribute__((__packed__)) BestPos
 {
-  uint32_t sol_stat;
-  uint32_t pos_type;
-  double latitude;
-  double longitude;
-  double height;
-  float undulation;
-  uint32_t datuum_id;
-  float lat_stdev;
-  float long_stdev;
-  float hgt_stdev;
+  uint32_t sol_stat = 0;
+  uint32_t pos_type = 0;
+  double latitude = 0;
+  double longitude = 0;
+  double height = 0;
+  float undulation = 0;
+  uint32_t datuum_id = 0;
+  float lat_stdev = 0;
+  float long_stdev = 0;
+  float hgt_stdev = 0;
   int8_t station_id[4];
-  float diff_age;
-  float sol_age;
-  uint8_t tracked_sats;
-  uint8_t solution_sats;
-  uint8_t sol_L1_sats;
-  uint8_t sol_multi_sats;
+  float diff_age = 0;
+  float sol_age = 0;
+  uint8_t tracked_sats = 0;
+  uint8_t solution_sats = 0;
+  uint8_t sol_L1_sats = 0;
+  uint8_t sol_multi_sats = 0;
   uint8_t _;
-  uint8_t ext_sol_stat;
-  uint8_t gal_bei_mask;
-  uint8_t gps_glon_mask;
+  uint8_t ext_sol_stat = 0;
+  uint8_t gal_bei_mask = 0;
+  uint8_t gps_glon_mask = 0;
 };
 
 struct __attribute__((__packed__)) BestVel
 {
-  uint32_t sol_stat;
-  uint32_t vel_type;
-  float latency;
-  float age;
-  double hor_spd;
-  double trk_gnd;
-  double vert_spd;
+  uint32_t sol_stat = 0;
+  uint32_t vel_type = 0;
+  float latency = 0;
+  float age = 0;
+  double hor_spd = 0;
+  double trk_gnd = 0;
+  double vert_spd = 0;
   float _;
 };
 
-struct __attribute__((__packed__)) Time
+struct __attribute__((__packed__)) BestTime
 {
-  uint32_t clk_stat;
-  double offset;
-  double offset_stdev;
-  double utc_offset;
-  uint32_t utc_year;
-  uint8_t utc_month;
-  uint8_t utc_day;
-  uint8_t utc_hour;
-  uint8_t utc_min;
-  uint32_t utc_ms;
-  uint32_t utc_stat;
+  uint32_t clk_stat = 0;
+  double offset = 0.0;
+  double offset_stdev = 0;
+  double utc_offset = 0;
+  uint32_t utc_year = 0;
+  uint8_t utc_month = 0;
+  uint8_t utc_day = 0;
+  uint8_t utc_hour = 0;
+  uint8_t utc_min = 0;
+  uint32_t utc_ms = 0;
+  uint32_t utc_stat = 0;
 };

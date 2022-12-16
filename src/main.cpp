@@ -13,17 +13,25 @@
 #include <QString>
 #include <QDateTime>
 
+#include <QTcpSocket>
+#include <QTcpServer>
+#include <QtNetwork>
+#include <QHostAddress>
+
 #include <fstream>
 
 #include <stdlib.h>
 #include <time.h>
 
 #include "gps.h"
-#include "nav.h"
+#include "messages.h"
+
+QTcpServer *nav_server;
+QTcpSocket *nav_socket = NULL;
+bool server_done = false;
 
 QSerialPort * serial;
 GPS gps;
-Nav * nav;
 
 int time_valid;
 QString filename;
@@ -33,201 +41,226 @@ time_t last_good_time_error = 0;
 
 int TIME_VALID_THRESHOLD = 5;
 
-//QString * timestamp;
+BestPos pos;
+BestVel vel;
+BestTime gps_time;
 
 void loop() {
 
     time_t cur_time;
     time(&cur_time);
     if (time_valid > TIME_VALID_THRESHOLD && ((double)cur_time) > ((double)last_good_time)+2.1 && cur_time > last_good_time_error + 1) {
-      QTextStream(stdout) << "\n" << "ERROR!!!!\nBAD FOR " << cur_time - last_good_time << " SECONDS." << "\n\n";
-      last_good_time_error = cur_time;
+        QTextStream(stdout) << "\n" << "ERROR!!!!\nBAD FOR " << cur_time - last_good_time << " SECONDS." << "\n\n";
+        last_good_time_error = cur_time;
     }
 
-  if (serial->bytesAvailable()) {
-    uint8_t byte;
-    serial->read((char*)&byte, 1);
-
-    if (time_valid > TIME_VALID_THRESHOLD) {
-      std::ofstream fout;
-      fout.open(filename.toLocal8Bit().constData(), std::ios::binary | std::ios::app);
-      fout.write((char*)&byte, sizeof(byte));
-      fout.close();
+    if (nav_socket != NULL && nav_socket->state() == QAbstractSocket::UnconnectedState) {
+        QTextStream(stdout) << "  Disconnected\n";
+        delete(nav_socket);
+        nav_socket = NULL;
+        server_done = false;
     }
+    if (nav_server->hasPendingConnections()) {
+        if (!server_done) {
+            QTextStream(stdout) << "Pending connection\n";
+            server_done = true;
 
-    if (gps.ingest(byte)) {
-        if (gps.get_message_id() != 0) {
-            QString test;
-            if (time_valid > TIME_VALID_THRESHOLD) {
-            //test = QString("Test %1%2%3").arg((int)2022,4,10,QLatin1Char('0')).arg(7,2,10,QLatin1Char('0')).arg(12,2,10,QLatin1Char('0'));
-            //printf("FILENAME: [%s]\n", test.toLocal8Bit().constData());
-            //printf("FILENAME: [%s]\n", filename.toLocal8Bit().constData());
+            nav_socket = nav_server->nextPendingConnection();
+
+            if (nav_socket->state() == QAbstractSocket::ConnectedState) {
+                QTextStream(stdout) << "  Connected\n";
+            } else {
+                QTextStream(stdout) << "  Failed to connect\n";
             }
-          //QTextStream(stdout) << __FILE__ << ":" << __LINE__ << ": " << gps.get_message_id() << " " << gps.get_header_len() << " " << gps.get_message_len() << "\n";
+        } else {
+            QTextStream(stdout) << "Pending connection, but already busy.\n";
         }
-      switch (gps.get_message_id()) {
-        case 42:
-          {
-            BestPos pos = gps.parse_bestpos();
-            //QTextStream(stdout) << __FILE__ << ":" << __LINE__ << ": \n";
-            QTextStream(stdout) << "BESTPOS: Lat: " << pos.latitude << " Lon: " << pos.longitude  << " Height: " << pos.height << " Solution Age: " << pos.sol_age << "\n";
-            //QTextStream(stdout) << __FILE__ << ":" << __LINE__ << ": \n";
-            //nav->update(pos);
-            time(&last_good_time);
-          }
-          break;
-        case 99:
-          {
-            //BestVel vel = gps.parse_bestvel();
-            //QTextStream(stdout) << vel.hor_spd << "\t" << vel.trk_gnd << "\n";
-            //nav->update(vel);
-          }
-          break;
-        case 101:
-          {
-            Time time = gps.parse_time();
-            QTextStream(stdout) << "TIME Status: " << time.utc_stat << " " << "Year: " << time.utc_year << " Month: " << time.utc_month << " Day:" << time.utc_day << " " << time.utc_hour << ":" << time.utc_min << ":" << ((double)time.utc_ms)/1000 << "\n";
-            if (time.utc_stat == 1 && time_valid < TIME_VALID_THRESHOLD) {
-                time_valid++;
-            }
-            if (time.utc_stat == 1 && time_valid == TIME_VALID_THRESHOLD) {
-                time_valid = TIME_VALID_THRESHOLD+1;
-                QTextStream(stdout) << "**************** FOUND SUFFICIENT VALID TIMES TO ENSURE OLD BUFFER FLUSHED **************" << "\n";
-                filename = QString("/data/GPS_Novatel_raw_%1%2%3_%4%5%6.gps")
-                        .arg((int)time.utc_year,4,10,QLatin1Char('0'))
-                        .arg((char)time.utc_month,2,10,QLatin1Char('0'))
-                        .arg((char)time.utc_day,2,10,QLatin1Char('0'))
-                        .arg((char)time.utc_hour,2,10,QLatin1Char('0'))
-                        .arg((char)time.utc_min,2,10,QLatin1Char('0'))
-                        .arg((int)time.utc_ms/1000,2,10,QLatin1Char('0'));
 
-                QTextStream(stdout) << "**************** RECORDING STARTING " << filename << " **************" << "\n";
-
-                QTextStream(stdout) << "**************** SETTING SYSTEM DATE AND TIME TO GPS TIME **************" << "\n";
-                QString set_date_cmd;
-                set_date_cmd = QString("date -u -s \"%1/%2/%3 %4:%5:%6\"")
-                        .arg((char)time.utc_month,2,10,QLatin1Char('0'))
-                        .arg((char)time.utc_day,2,10,QLatin1Char('0'))
-                        .arg((int)time.utc_year,4,10,QLatin1Char('0'))
-                        .arg((char)time.utc_hour,2,10,QLatin1Char('0'))
-                        .arg((char)time.utc_min,2,10,QLatin1Char('0'))
-                        .arg((int)time.utc_ms/1000,2,10,QLatin1Char('0'));
-                QTextStream(stdout) << set_date_cmd << "\n";
-                int ret_val;
-                ret_val = system(set_date_cmd.toLocal8Bit().constData());
-                QTextStream(stdout) << "  Return value: " << ret_val << "\n";
-
-
-            }
-            //nav->update(time);
-          }
-          break;
-        default:
-          break;
-      }
     }
-    //QTextStream(stdout) << bit << endl;
-  }
+
+    if (serial->bytesAvailable()) {
+        uint8_t byte;
+        serial->read((char*)&byte, 1);
+
+        if (time_valid > TIME_VALID_THRESHOLD) {
+            std::ofstream fout;
+            fout.open(filename.toLocal8Bit().constData(), std::ios::binary | std::ios::app);
+            fout.write((char*)&byte, sizeof(byte));
+            fout.close();
+        }
+
+        if (gps.ingest(byte)) {
+            if (gps.get_message_id() != 0) {
+                QString test;
+                if (time_valid > TIME_VALID_THRESHOLD) {
+                }
+            }
+            switch (gps.get_message_id()) {
+            case 42:
+            {
+                pos = gps.parse_bestpos();
+                QTextStream(stdout) << "BESTPOS: Lat: " << pos.latitude << " Lon: " << pos.longitude  << " Height: " << pos.height << " Solution Age: " << pos.sol_age << "\n";
+                time(&last_good_time);
+            }
+                break;
+            case 99:
+            {
+                vel = gps.parse_bestvel();
+                QTextStream(stdout) << "BESTVEL: " << vel.hor_spd << " m/s at " << vel.trk_gnd << " deg. Vert vel: " << vel.vert_spd << " m/s\n";
+
+                if (nav_socket != NULL && nav_socket->state() == QAbstractSocket::ConnectedState) {
+                    QString output =
+                            QString::asprintf("11,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f\n",
+                                              (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
+                                              (char)gps_time.utc_hour, (char)gps_time.utc_min, ((double)gps_time.utc_ms)/1000.0,
+                                              pos.latitude, pos.longitude, pos.height*3.28083989501, // 3.28... to convert metres->feet
+                                              vel.trk_gnd, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
+                                              );
+                    QTextStream(stdout) << "  To nav: " << output << "\n";
+                    nav_socket->write(output.toUtf8());
+                } else {
+                    QTextStream(stdout) << "  Nav not connected\n";
+                }
+            }
+                break;
+            case 101:
+            {
+                gps_time = gps.parse_time();
+                QTextStream(stdout) << "TIME Status: " << gps_time.utc_stat << " " << "Year: " << gps_time.utc_year << " Month: " << gps_time.utc_month << " Day:" << gps_time.utc_day << " " << gps_time.utc_hour << ":" << gps_time.utc_min << ":" << ((double)gps_time.utc_ms)/1000 << "\n";
+                if (gps_time.utc_stat == 1 && time_valid < TIME_VALID_THRESHOLD) {
+                    time_valid++;
+                }
+                if (gps_time.utc_stat == 1 && time_valid == TIME_VALID_THRESHOLD) {
+                    time_valid = TIME_VALID_THRESHOLD+1;
+                    QTextStream(stdout) << "**************** FOUND SUFFICIENT VALID TIMES TO ENSURE OLD BUFFER FLUSHED **************" << "\n";
+                    filename = QString("/data/GPS_Novatel_raw_%1%2%3_%4%5%6.gps")
+                            .arg((int)gps_time.utc_year,4,10,QLatin1Char('0'))
+                            .arg((char)gps_time.utc_month,2,10,QLatin1Char('0'))
+                            .arg((char)gps_time.utc_day,2,10,QLatin1Char('0'))
+                            .arg((char)gps_time.utc_hour,2,10,QLatin1Char('0'))
+                            .arg((char)gps_time.utc_min,2,10,QLatin1Char('0'))
+                            .arg((int)gps_time.utc_ms/1000,2,10,QLatin1Char('0'));
+
+                    QTextStream(stdout) << "**************** RECORDING STARTING " << filename << " **************" << "\n";
+
+                    QTextStream(stdout) << "**************** SETTING SYSTEM DATE AND TIME TO GPS TIME **************" << "\n";
+                    QString set_date_cmd;
+                    set_date_cmd = QString("date -u -s \"%1/%2/%3 %4:%5:%6\"")
+                            .arg((char)gps_time.utc_month,2,10,QLatin1Char('0'))
+                            .arg((char)gps_time.utc_day,2,10,QLatin1Char('0'))
+                            .arg((int)gps_time.utc_year,4,10,QLatin1Char('0'))
+                            .arg((char)gps_time.utc_hour,2,10,QLatin1Char('0'))
+                            .arg((char)gps_time.utc_min,2,10,QLatin1Char('0'))
+                            .arg((int)gps_time.utc_ms/1000,2,10,QLatin1Char('0'));
+                    QTextStream(stdout) << set_date_cmd << "\n";
+                    int ret_val;
+                    ret_val = system(set_date_cmd.toLocal8Bit().constData());
+                    QTextStream(stdout) << "  Return value: " << ret_val << "\n";
+
+
+                }
+            }
+                break;
+            default:
+                break;
+            }
+        }
+        //QTextStream(stdout) << bit << endl;
+    }
 }
 
 int main(int argc, char *argv[]) {
-  QCoreApplication::setSetuidAllowed(true);
+    QCoreApplication::setSetuidAllowed(true);
 
-  QCoreApplication app(argc, argv);
+    QCoreApplication app(argc, argv);
 
-  QTextStream out(stdout);
+    // Nav server: open listening port
+    nav_server = new QTcpServer();
+    QString host_name = "localhost";
+    QHostAddress host;
+    host.setAddress(host_name);
+    int port = 4040;
+    QTextStream(stdout) << "Trying to listen on " << host_name << ": " << port << "\n";
+    nav_server->listen(host, port);
+    QTextStream(stdout) << "Listening\n";
 
-  if (argc >= 2) {
-      try {
-          TIME_VALID_THRESHOLD = QString(argv[1]).toInt();
-      } catch (void *exception) {
-          out  << "First argument interpretation failure. Setting TIME_VALID_THRESHOLD to default value of 5." << "\n";
-          TIME_VALID_THRESHOLD = 5;
-      }
-      if (TIME_VALID_THRESHOLD < 1 || TIME_VALID_THRESHOLD > 100) {
-          out  << "TIME_VALID_THRESHOLD out of range. Setting TIME_VALID_THRESHOLD to default value of 5." << "\n";
-          TIME_VALID_THRESHOLD = 5;
-      }
-  } else {
-    TIME_VALID_THRESHOLD = 5;
-  }
-  out  << "TIME_VALID_THRESHOLD: " << TIME_VALID_THRESHOLD << "\n\n";
+    QTextStream out(stdout);
 
-  time_valid = 0;
-  int port_valid = 0;
+    if (argc >= 2) {
+        try {
+            TIME_VALID_THRESHOLD = QString(argv[1]).toInt();
+        } catch (void *exception) {
+            out  << "First argument interpretation failure. Setting TIME_VALID_THRESHOLD to default value of 5." << "\n";
+            TIME_VALID_THRESHOLD = 5;
+        }
+        if (TIME_VALID_THRESHOLD < 1 || TIME_VALID_THRESHOLD > 100) {
+            out  << "TIME_VALID_THRESHOLD out of range. Setting TIME_VALID_THRESHOLD to default value of 5." << "\n";
+            TIME_VALID_THRESHOLD = 5;
+        }
+    } else {
+        TIME_VALID_THRESHOLD = 5;
+    }
+    out  << "TIME_VALID_THRESHOLD: " << TIME_VALID_THRESHOLD << "\n\n";
 
-  QString port_system_location = "/dev/ttyUSB0";
+    time_valid = 0;
+    int port_valid = 0;
 
-  out  << "**************** SYSTEM SERIAL PORT INFO **************" << "\n";
-        const auto serialPortInfos = QSerialPortInfo::availablePorts();
+    QString port_system_location = "/dev/ttyUSB0";
 
-        out << "Total number of serial ports available: " << serialPortInfos.count() << endl << endl;
+    out  << "**************** SYSTEM SERIAL PORT INFO **************" << "\n";
+    const auto serialPortInfos = QSerialPortInfo::availablePorts();
 
-        out << "Listing serial ports:" << endl << endl;
+    out << "Total number of serial ports available: " << serialPortInfos.count() << endl << endl;
 
-        const QString blankString = "N/A";
-        QString description;
-        QString manufacturer;
-        QString serialNumber;
+    out << "Listing serial ports:" << endl << endl;
 
-        for (const QSerialPortInfo &serialPortInfo : serialPortInfos) {
-            description = serialPortInfo.description();
-            manufacturer = serialPortInfo.manufacturer();
-            serialNumber = serialPortInfo.serialNumber();
+    const QString blankString = "N/A";
+    QString description;
+    QString manufacturer;
+    QString serialNumber;
+
+    for (const QSerialPortInfo &serialPortInfo : serialPortInfos) {
+        description = serialPortInfo.description();
+        manufacturer = serialPortInfo.manufacturer();
+        serialNumber = serialPortInfo.serialNumber();
 
 
-            if ((description == "Novatel GPS Receiver" || description == "NovAtel GPS Receiver") && port_valid == 0) {
-                port_valid = 1;
-              out << "******************** USING THIS PORT ************************" << endl;
-              port_system_location = serialPortInfo.systemLocation();
-            }
-
-            out << "Port: " << serialPortInfo.portName() << endl
-                << "Location: " << serialPortInfo.systemLocation() << endl
-                << "Description: " << (!description.isEmpty() ? description : blankString) << endl
-                << "Manufacturer: " << (!manufacturer.isEmpty() ? manufacturer : blankString) << endl
-                << "Serial number: " << (!serialNumber.isEmpty() ? serialNumber : blankString) << endl
-                << "Vendor Identifier: " << (serialPortInfo.hasVendorIdentifier()
-                                             ? QByteArray::number(serialPortInfo.vendorIdentifier(), 16)
-                                             : blankString) << endl
-                << "Product Identifier: " << (serialPortInfo.hasProductIdentifier()
-                                              ? QByteArray::number(serialPortInfo.productIdentifier(), 16)
-                                              : blankString) << endl
-                << "Busy: " << (serialPortInfo.isBusy() ? "Yes" : "No") << endl << endl;
+        if ((description == "Novatel GPS Receiver" || description == "NovAtel GPS Receiver") && port_valid == 0) {
+            port_valid = 1;
+            out << "******************** USING THIS PORT ************************" << endl;
+            port_system_location = serialPortInfo.systemLocation();
         }
 
-  //QDateTime now = QDateTime::currentDateTime();
+        out << "Port: " << serialPortInfo.portName() << endl
+            << "Location: " << serialPortInfo.systemLocation() << endl
+            << "Description: " << (!description.isEmpty() ? description : blankString) << endl
+            << "Manufacturer: " << (!manufacturer.isEmpty() ? manufacturer : blankString) << endl
+            << "Serial number: " << (!serialNumber.isEmpty() ? serialNumber : blankString) << endl
+            << "Vendor Identifier: " << (serialPortInfo.hasVendorIdentifier()
+                                         ? QByteArray::number(serialPortInfo.vendorIdentifier(), 16)
+                                         : blankString) << endl
+            << "Product Identifier: " << (serialPortInfo.hasProductIdentifier()
+                                          ? QByteArray::number(serialPortInfo.productIdentifier(), 16)
+                                          : blankString) << endl
+            << "Busy: " << (serialPortInfo.isBusy() ? "Yes" : "No") << endl << endl;
+    }
+    if (port_valid == 0) {
+        out << "WARNING: DID NOT FIND VALID NOVATEL PORT!" << endl;
+    }
 
-  //timestamp = new QString(now.toString(QLatin1String("yyyyMMdd_hhmmss")));
+    out  << "**************** OPENING SERIAL PORT " << port_system_location << " **************" << endl;
+    serial = new QSerialPort(port_system_location);
+    serial->open(QIODevice::ReadWrite);
+    serial->readAll();
 
-  //nav = new Nav("localhost", 4040, &app); // Original
-  //nav = new Nav("aq-field18", 20050, &app); //TEST
+    out  << "**************** STARTING TO READ SERIAL PORT **************" << endl;
+    QTimer *parseTimer = new QTimer();
+    QObject::connect(parseTimer, &QTimer::timeout, &loop);
+    parseTimer->start();
 
-        if (port_valid == 0) {
-            out << "WARNING: DID NOT FIND VALID NOVATEL PORT!" << endl;
-        }
+    int ret_val = app.exec();
 
-  out  << "**************** OPENING SERIAL PORT " << port_system_location << " **************" << endl;
+    out  << "**************** EXITING **************" << "\n";
 
-  serial = new QSerialPort(port_system_location);
-  serial->open(QIODevice::ReadWrite);
-  serial->readAll();
-
-  out  << "**************** STARTING TO READ SERIAL PORT **************" << endl;
-  QTimer *parseTimer = new QTimer();
-  QObject::connect(parseTimer, &QTimer::timeout, &loop);
-  parseTimer->start();
-
-  // QTimer *navTimer = new QTimer();
-  // navTimer->setInterval(1000);
-  // QObject::connect(navTimer, &QTimer::timeout, nav, &Nav::send);
-  // QTextStream(stdout) << "Test\n";
-  // navTimer->start();
-  // QTextStream(stdout) << "Test\n";
-
-  int ret_val = app.exec();
-
-  out  << "**************** EXITING **************" << "\n";
-
-  return ret_val;
+    return ret_val;
 }
