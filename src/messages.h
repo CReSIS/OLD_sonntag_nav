@@ -71,3 +71,24 @@ struct __attribute__((__packed__)) BestTime
   uint32_t utc_ms = 0;
   uint32_t utc_stat = 0;
 };
+
+struct __attribute__((__packed__)) Heading
+{
+  uint32_t sol_stat = 0;
+  uint32_t pos_type = 0;
+  float length = 0.0;
+  float heading = 0.0;
+  float pitch = 0.0;
+  float reserved = 0.0;
+  float heading_stdev= 0.0;
+  float pitch_stdev= 0.0;
+  int8_t station_id[4];
+  uint8_t tracked_sats = 0;
+  uint8_t solution_sats = 0;
+  uint8_t num_sat_above_elev_mask = 0;
+  uint8_t num_sat_above_elev_mask_with_L2 = 0;
+  uint8_t sol_source = 0;
+  uint8_t ext_sol_stat = 0;
+  uint8_t gal_bei_mask = 0;
+  uint8_t gps_glon_mask = 0;
+};

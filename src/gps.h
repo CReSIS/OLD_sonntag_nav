@@ -30,6 +30,7 @@ public:
   uint8_t get_header_len() { return header_len; }
   uint8_t get_message_len() { return message_len; }
   Header parse_header();
+  Heading parse_heading();
   BestPos parse_bestpos();
   BestVel parse_bestvel();
   BestTime parse_time();

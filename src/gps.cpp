@@ -71,3 +71,8 @@ BestTime GPS::parse_time() {
   BestTime msg = *((BestTime*)(buf+header_len));
   return msg;
 }
+
+Heading GPS::parse_heading() {
+  Heading msg = *((Heading*)(buf+header_len));
+  return msg;
+}

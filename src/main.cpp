@@ -44,6 +44,7 @@ int TIME_VALID_THRESHOLD = 5;
 BestPos pos;
 BestVel vel;
 BestTime gps_time;
+Heading heading;
 
 void loop() {
 
@@ -159,8 +160,14 @@ void loop() {
 
 
                 }
-            }
                 break;
+            }
+            case 971:
+            {
+                heading = gps.parse_heading();
+                QTextStream(stdout) << "HEADING Heading: " << heading.heading << " deg Pitch: " << heading.pitch << " deg\n";
+                break;
+            }
             default:
                 break;
             }
