@@ -107,18 +107,33 @@ void loop() {
             case 99:
             {
                 vel = gps.parse_bestvel();
-                QTextStream(stdout) << "BESTVEL: " << vel.hor_spd << " m/s at " << vel.trk_gnd << " deg. Vert vel: " << vel.vert_spd << " m/s\n";
-
+                if (heading.heading != 0) {
+                    QTextStream(stdout) << "BESTVEL+HEADING: " << vel.hor_spd << " m/s at " << heading.heading << " deg. Vert vel: " << vel.vert_spd << " m/s at " << heading.pitch << " deg.\n";
+                } else {
+                    QTextStream(stdout) << "BESTVEL: " << vel.hor_spd << " m/s at " << vel.trk_gnd << " deg. Vert vel: " << vel.vert_spd << " m/s\n";
+                }
                 if (nav_socket != NULL && nav_socket->state() == QAbstractSocket::ConnectedState) {
-                    QString output =
-                            QString::asprintf("11,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f\n",
-                                              (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
-                                              (char)gps_time.utc_hour, (char)gps_time.utc_min, ((double)gps_time.utc_ms)/1000.0,
-                                              pos.latitude, pos.longitude, pos.height*3.28083989501, // 3.28... to convert metres->feet
-                                              vel.trk_gnd, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
-                                              );
-                    QTextStream(stdout) << "  To nav: " << output << "\n";
-                    nav_socket->write(output.toUtf8());
+                    if (heading.heading != 0.0) {
+                        QString output =
+                                QString::asprintf("11,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f\n",
+                                                  (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
+                                                  (char)gps_time.utc_hour, (char)gps_time.utc_min, ((double)gps_time.utc_ms)/1000.0,
+                                                  pos.latitude, pos.longitude, pos.height*3.28083989501, // 3.28... to convert metres->feet
+                                                  heading.heading, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
+                                                  );
+                        QTextStream(stdout) << "  To nav: " << output << "\n";
+                        nav_socket->write(output.toUtf8());
+                    } else {
+                        QString output =
+                                QString::asprintf("11,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f\n",
+                                                  (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
+                                                  (char)gps_time.utc_hour, (char)gps_time.utc_min, ((double)gps_time.utc_ms)/1000.0,
+                                                  pos.latitude, pos.longitude, pos.height*3.28083989501, // 3.28... to convert metres->feet
+                                                  vel.trk_gnd, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
+                                                  );
+                        QTextStream(stdout) << "  To nav: " << output << "\n";
+                        nav_socket->write(output.toUtf8());
+                    }
                 } else {
                     QTextStream(stdout) << "  Nav not connected\n";
                 }
@@ -165,7 +180,7 @@ void loop() {
             case 971:
             {
                 heading = gps.parse_heading();
-                QTextStream(stdout) << "HEADING Heading: " << heading.heading << " deg Pitch: " << heading.pitch << " deg\n";
+                // QTextStream(stdout) << "HEADING Heading: " << heading.heading << " deg Pitch: " << heading.pitch << " deg\n";
                 break;
             }
             default:
