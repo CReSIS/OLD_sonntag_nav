@@ -40,6 +40,7 @@ time_t last_good_time = 0;
 time_t last_good_time_error = 0;
 
 int TIME_VALID_THRESHOLD = 5;
+double HEADING_OFFSET = 0;
 
 BestPos pos;
 BestVel vel;
@@ -108,7 +109,7 @@ void loop() {
             {
                 vel = gps.parse_bestvel();
                 if (heading.heading != 0) {
-                    QTextStream(stdout) << "BESTVEL+HEADING: " << vel.hor_spd << " m/s at " << heading.heading << " deg. Vert vel: " << vel.vert_spd << " m/s at " << heading.pitch << " deg.\n";
+                    QTextStream(stdout) << "BESTVEL+HEADING: " << vel.hor_spd << " m/s at " << heading.heading+HEADING_OFFSET << " deg. Vert vel: " << vel.vert_spd << " m/s at " << heading.pitch << " deg.\n";
                 } else {
                     QTextStream(stdout) << "BESTVEL: " << vel.hor_spd << " m/s at " << vel.trk_gnd << " deg. Vert vel: " << vel.vert_spd << " m/s\n";
                 }
@@ -119,7 +120,7 @@ void loop() {
                                                   (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
                                                   (char)gps_time.utc_hour, (char)gps_time.utc_min, ((double)gps_time.utc_ms)/1000.0,
                                                   pos.latitude, pos.longitude, pos.height*3.28083989501, // 3.28... to convert metres->feet
-                                                  heading.heading, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
+                                                  heading.heading+HEADING_OFFSET, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
                                                   );
                         QTextStream(stdout) << "  To nav: " << output << "\n";
                         nav_socket->write(output.toUtf8());
@@ -208,6 +209,21 @@ int main(int argc, char *argv[]) {
 
     QTextStream out(stdout);
 
+    if (argc >= 3) {
+        try {
+            HEADING_OFFSET = QString(argv[2]).toDouble();
+        } catch (void *exception) {
+            out  << "Second argument interpretation failure. Setting HEADING_OFFSET to default value of 0.0." << "\n";
+            HEADING_OFFSET = 0.0;
+        }
+        if (HEADING_OFFSET < -360 || HEADING_OFFSET > 360) {
+            out  << "HEADING_OFFSET out of range. Setting HEADING_OFFSET to default value of 0.0." << "\n";
+            HEADING_OFFSET = 0.0;
+        }
+    } else {
+        HEADING_OFFSET = 0.0;
+    }
+    out  << "HEADING_OFFSET: " << HEADING_OFFSET << "\n\n";
     if (argc >= 2) {
         try {
             TIME_VALID_THRESHOLD = QString(argv[1]).toInt();
