@@ -179,6 +179,7 @@ void loop() {
                 break;
             }
             case 971:
+            case 2042:
             {
                 heading = gps.parse_heading();
                 // QTextStream(stdout) << "HEADING Heading: " << heading.heading << " deg Pitch: " << heading.pitch << " deg\n";
