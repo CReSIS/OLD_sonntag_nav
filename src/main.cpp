@@ -101,10 +101,12 @@ void loop() {
             case 42:
             {
                 pos = gps.parse_bestpos();
-                QTextStream(stdout) << "BESTPOS: Lat: " << pos.latitude << " Lon: " << pos.longitude  << " Height: " << pos.height << " Solution Age: " << pos.sol_age << "\n";
+                QTextStream(stdout) << "BESTPOS: Lat: " << pos.latitude << " Lon: " << pos.longitude  << " Height: " << pos.height
+                                    << " Solution Age: " << pos.sol_age
+                                    << " Sats: " << pos.tracked_sats << "-" << pos.solution_sats << "-" << pos.sol_L1_sats << "-" << pos.sol_multi_sats << "\n";
                 time(&last_good_time);
-            }
                 break;
+            }
             case 99:
             {
                 vel = gps.parse_bestvel();
