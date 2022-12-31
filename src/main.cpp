@@ -9,6 +9,8 @@
 #include <QSerialPortInfo>
 #include <QTimer>
 #include <QCoreApplication>
+#include <QProcessEnvironment>
+#include <QSysInfo>
 
 #include <QString>
 #include <QDateTime>
@@ -151,14 +153,18 @@ void loop() {
                 }
                 if (gps_time.utc_stat == 1 && time_valid == TIME_VALID_THRESHOLD) {
                     time_valid = TIME_VALID_THRESHOLD+1;
+
+                    QString machine_hostname = QSysInfo::machineHostName();
+
                     QTextStream(stdout) << "**************** FOUND SUFFICIENT VALID TIMES TO ENSURE OLD BUFFER FLUSHED **************" << "\n";
-                    filename = QString("/data/GPS_Novatel_raw_%1%2%3_%4%5%6.gps")
+                    filename = QString("/data/GPS_Novatel_raw_%7_%1%2%3_%4%5%6.gps")
                             .arg((int)gps_time.utc_year,4,10,QLatin1Char('0'))
                             .arg((char)gps_time.utc_month,2,10,QLatin1Char('0'))
                             .arg((char)gps_time.utc_day,2,10,QLatin1Char('0'))
                             .arg((char)gps_time.utc_hour,2,10,QLatin1Char('0'))
                             .arg((char)gps_time.utc_min,2,10,QLatin1Char('0'))
-                            .arg((int)gps_time.utc_ms/1000,2,10,QLatin1Char('0'));
+                            .arg((int)gps_time.utc_ms/1000,2,10,QLatin1Char('0'))
+                            .arg(machine_hostname);
 
                     QTextStream(stdout) << "**************** RECORDING STARTING " << filename << " **************" << "\n";
 
@@ -199,6 +205,11 @@ int main(int argc, char *argv[]) {
     QCoreApplication::setSetuidAllowed(true);
 
     QCoreApplication app(argc, argv);
+
+    // Example for getting environment variables:
+    //QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    //QString h1 = env.value("HOSTNAME", QString("default"));
+    //QTextStream(stdout) << "h1 " << env.toStringList().value(0) << "\n";
 
     // Nav server: open listening port
     nav_server = new QTcpServer();
