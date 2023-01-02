@@ -113,13 +113,13 @@ void loop() {
             case 99:
             {
                 vel = gps.parse_bestvel();
-                if (heading.heading != 0) {
+                if (!isnan(HEADING_OFFSET) && heading.heading != 0) {
                     QTextStream(stdout) << "BESTVEL+HEADING: " << vel.hor_spd << " m/s at " << fmodf(heading.heading+HEADING_OFFSET+180.0,360.0)-180.0 << " deg. Vert vel: " << vel.vert_spd << " m/s at " << heading.pitch << " deg.\n";
                 } else {
                     QTextStream(stdout) << "BESTVEL: " << vel.hor_spd << " m/s at " << vel.trk_gnd << " deg. Vert vel: " << vel.vert_spd << " m/s\n";
                 }
                 if (nav_socket != NULL && nav_socket->state() == QAbstractSocket::ConnectedState) {
-                    if (heading.heading != 0.0) {
+                    if (!isnan(HEADING_OFFSET) && heading.heading != 0) {
                         QString output =
                                 QString::asprintf("11,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f\n",
                                                   (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
