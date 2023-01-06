@@ -130,6 +130,9 @@ void loop() {
                         QTextStream(stdout) << "  To nav: " << output << "\n";
                         nav_socket->write(output.toUtf8());
                     } else {
+                        if (fabs(vel.hor_spd) < 1 && fabs(vel.vert_spd) < 1) {
+                            vel.trk_gnd = 0;
+                        }
                         QString output =
                                 QString::asprintf("11,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f\n",
                                                   (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
