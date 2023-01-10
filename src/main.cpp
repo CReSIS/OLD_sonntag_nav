@@ -49,6 +49,7 @@ BestPos pos;
 BestVel vel;
 BestTime gps_time;
 Heading heading;
+double best_vel_heading = 0.0;
 
 void loop() {
 
@@ -104,9 +105,22 @@ void loop() {
             case 42:
             {
                 pos = gps.parse_bestpos();
-                QTextStream(stdout) << "BESTPOS: Lat: " << pos.latitude << " Lon: " << pos.longitude  << " Height: " << pos.height
-                                    << " Solution Age: " << pos.sol_age
-                                    << " Sats: " << pos.tracked_sats << "-" << pos.solution_sats << "-" << pos.sol_L1_sats << "-" << pos.sol_multi_sats << "\n";
+
+                QString msg = QString("\nBESTPOS: Lat: %1 Lon: %2 Elev: %3 Age: %4 Sats: %5-%6-%7-%8 Status: %9 Error Lat: %10 Lon: %11 Elev: %12\n")
+                        .arg((double)pos.latitude,8,'f',4,QLatin1Char(' '))
+                        .arg((double)pos.longitude,9,'f',4,QLatin1Char(' '))
+                        .arg((double)pos.height,5,'f',1,QLatin1Char(' '))
+                        .arg((float)pos.sol_age,1,'g',0,QLatin1Char(' '))
+                        .arg((uint8_t)pos.tracked_sats,2,10,QLatin1Char(' '))
+                        .arg((uint8_t)pos.solution_sats,2,10,QLatin1Char(' '))
+                        .arg((uint8_t)pos.sol_L1_sats,2,10,QLatin1Char(' '))
+                        .arg((uint8_t)pos.sol_multi_sats,2,10,QLatin1Char(' '))
+                        .arg((uint32_t)pos.sol_stat,1,10,QLatin1Char(' '))
+                        .arg((double)pos.lat_stdev,4,'f',1,QLatin1Char(' '))
+                        .arg((double)pos.long_stdev,4,'f',1,QLatin1Char(' '))
+                        .arg((double)pos.hgt_stdev,4,'f',1,QLatin1Char(' '));
+
+                QTextStream(stdout) << msg;
                 time(&last_good_time);
                 break;
             }
@@ -114,12 +128,25 @@ void loop() {
             {
                 vel = gps.parse_bestvel();
                 if (fabs(vel.hor_spd) < 1 && fabs(vel.vert_spd) < 1) {
-                    vel.trk_gnd = 0;
+                    vel.trk_gnd = best_vel_heading;
+                } else {
+                    best_vel_heading = vel.trk_gnd;
                 }
                 if (!isnan(HEADING_OFFSET) && heading.heading != 0) {
-                    QTextStream(stdout) << "BESTVEL+HEADING: " << vel.hor_spd << " m/s at " << fmodf(heading.heading+HEADING_OFFSET+180.0,360.0)-180.0 << " deg. Vert vel: " << vel.vert_spd << " m/s at " << heading.pitch << " deg.\n";
+                    QString msg = QString("BESTVEL+HEADING: hor %1 m/s at %2 deg   vert %3 m/s\n")
+                            .arg((double)vel.hor_spd,3,'f',0,QLatin1Char(' '))
+                            .arg(fmodf(heading.heading+HEADING_OFFSET+180.0,360.0)-180.0,3,'f',0,QLatin1Char(' '))
+                            .arg((double)vel.vert_spd,4,'f',1,QLatin1Char(' '))
+                            .arg((double)heading.pitch,4,'f',1,QLatin1Char(' '));
+                    QTextStream(stdout) << msg;
+                    //QTextStream(stdout) << "BESTVEL+HEADING: " << vel.hor_spd << " m/s at " << fmodf(heading.heading+HEADING_OFFSET+180.0,360.0)-180.0 << " deg. Vert vel: " << vel.vert_spd << " m/s at " << heading.pitch << " deg.\n";
                 } else {
-                    QTextStream(stdout) << "BESTVEL: " << vel.hor_spd << " m/s at " << vel.trk_gnd << " deg. Vert vel: " << vel.vert_spd << " m/s\n";
+                    QString msg = QString("BESTVEL: hor %1 m/s at %2 deg   vert %3 m/s\n")
+                            .arg((double)vel.hor_spd,3,'f',0,QLatin1Char(' '))
+                            .arg((double)vel.trk_gnd,3,'f',0,QLatin1Char(' '))
+                            .arg((double)vel.vert_spd,4,'f',1,QLatin1Char(' '));
+                    QTextStream(stdout) << msg;
+                    //QTextStream(stdout) << "BESTVEL: " << vel.hor_spd << " m/s at " << vel.trk_gnd << " deg. Vert vel: " << vel.vert_spd << " m/s\n";
                 }
                 if (nav_socket != NULL && nav_socket->state() == QAbstractSocket::ConnectedState) {
                     if (!isnan(HEADING_OFFSET) && heading.heading != 0) {
@@ -151,7 +178,18 @@ void loop() {
             case 101:
             {
                 gps_time = gps.parse_time();
-                QTextStream(stdout) << "TIME Status: " << gps_time.utc_stat << " " << "Year: " << gps_time.utc_year << " Month: " << gps_time.utc_month << " Day:" << gps_time.utc_day << " " << gps_time.utc_hour << ":" << gps_time.utc_min << ":" << ((double)gps_time.utc_ms)/1000 << "\n";
+
+                QString msg = QString("TIME: Status: %1 %2/%3/%4 %5:%6:%7\n")
+                        .arg(gps_time.utc_stat,2,10,QLatin1Char(' '))
+                        .arg(gps_time.utc_day,2,10,QLatin1Char('0'))
+                        .arg(gps_time.utc_month,2,10,QLatin1Char('0'))
+                        .arg(gps_time.utc_year,4,10,QLatin1Char('0'))
+                        .arg(gps_time.utc_hour,2,10,QLatin1Char('0'))
+                        .arg(gps_time.utc_min,2,10,QLatin1Char('0'))
+                        .arg(((double)gps_time.utc_ms)/1000.0,4,'f',1,QLatin1Char('0'));
+                QTextStream(stdout) << msg;
+
+                //QTextStream(stdout) << "TIME Status: " << gps_time.utc_stat << " " << "Year: " << gps_time.utc_year << " Month: " << gps_time.utc_month << " Day:" << gps_time.utc_day << " " << gps_time.utc_hour << ":" << gps_time.utc_min << ":" << ((double)gps_time.utc_ms)/1000 << "\n";
                 if (gps_time.utc_stat == 1 && time_valid < TIME_VALID_THRESHOLD) {
                     time_valid++;
                 }
@@ -306,8 +344,10 @@ int main(int argc, char *argv[]) {
 
     out  << "**************** OPENING SERIAL PORT " << port_system_location << " **************" << endl;
     serial = new QSerialPort(port_system_location);
+    //serial->setBaudRate(230400); // Not needed?
     serial->open(QIODevice::ReadWrite);
     serial->readAll();
+    out << "BAUD: " << serial->baudRate() << endl;
 
     out  << "**************** STARTING TO READ SERIAL PORT **************" << endl;
     QTimer *parseTimer = new QTimer();
