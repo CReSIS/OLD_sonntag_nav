@@ -179,7 +179,7 @@ void loop() {
             {
                 gps_time = gps.parse_time();
 
-                QString msg = QString("TIME: Status: %1 %2/%3/%4 %5:%6:%7\n")
+                QString msg = QString("TIME: Status: %1 %4_%3_%2 %5:%6:%7\n")
                         .arg(gps_time.utc_stat,2,10,QLatin1Char(' '))
                         .arg(gps_time.utc_day,2,10,QLatin1Char('0'))
                         .arg(gps_time.utc_month,2,10,QLatin1Char('0'))
