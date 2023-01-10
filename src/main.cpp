@@ -133,7 +133,7 @@ void loop() {
                     best_vel_heading = vel.trk_gnd;
                 }
                 if (!isnan(HEADING_OFFSET) && heading.heading != 0) {
-                    QString msg = QString("BESTVEL+HEADING: hor %1 m/s at %2 deg   vert %3 m/s\n")
+                    QString msg = QString("BESTVEL+HEADING: hor %1 m/s at %2 deg   vert %3 m/s at %4 deg\n")
                             .arg((double)vel.hor_spd,3,'f',0,QLatin1Char(' '))
                             .arg(fmodf(heading.heading+HEADING_OFFSET+180.0,360.0)-180.0,3,'f',0,QLatin1Char(' '))
                             .arg((double)vel.vert_spd,4,'f',1,QLatin1Char(' '))
