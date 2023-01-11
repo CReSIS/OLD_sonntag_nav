@@ -49,6 +49,7 @@ BestPos pos;
 BestVel vel;
 BestTime gps_time;
 Heading heading;
+InsAtt ins;
 double best_vel_heading = 0.0;
 
 void loop() {
@@ -106,7 +107,7 @@ void loop() {
             {
                 pos = gps.parse_bestpos();
 
-                QString msg = QString("\nBESTPOS: Lat: %1 Lon: %2 Elev: %3 Age: %4 Sats: %5-%6-%7-%8 Status: %9 Error Lat: %10 Lon: %11 Elev: %12\n")
+                QString msg = QString("\nBESTPOS: %1°E %2°N %3 m Age: %4 Stat: %9:%5-%6-%7-%8 Error %10-%11-%12\n")
                         .arg((double)pos.latitude,8,'f',4,QLatin1Char(' '))
                         .arg((double)pos.longitude,9,'f',4,QLatin1Char(' '))
                         .arg((double)pos.height,5,'f',1,QLatin1Char(' '))
@@ -226,6 +227,19 @@ void loop() {
 
 
                 }
+                break;
+            }
+            case 263:
+            {
+                ins = gps.parse_insatt();
+
+                QString msg = QString("INSATT: Roll: %1 Pitch: %2 Heading: %3 Status: %4\n")
+                        .arg((double)ins.roll,4,'f',1,QLatin1Char(' '))
+                        .arg((double)ins.pitch,4,'f',1,QLatin1Char(' '))
+                        .arg((double)ins.azimuth,5,'f',1,QLatin1Char(' '))
+                        .arg((uint32_t)ins.status,2,10,QLatin1Char(' '));
+
+                QTextStream(stdout) << msg;
                 break;
             }
             case 971:

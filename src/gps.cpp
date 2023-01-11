@@ -76,3 +76,8 @@ Heading GPS::parse_heading() {
   Heading msg = *((Heading*)(buf+header_len));
   return msg;
 }
+
+InsAtt GPS::parse_insatt() {
+  InsAtt msg = *((InsAtt*)(buf+header_len));
+  return msg;
+}

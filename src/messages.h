@@ -92,3 +92,13 @@ struct __attribute__((__packed__)) Heading
   uint8_t gal_bei_mask = 0;
   uint8_t gps_glon_mask = 0;
 };
+
+struct __attribute__((__packed__)) InsAtt
+{
+  uint32_t gnss_week= 0;
+  double gnss_sec = 0;
+  double roll = 0.0;
+  double pitch = 0.0;
+  double azimuth = 0.0;
+  uint32_t status = 0;
+};

@@ -34,4 +34,5 @@ public:
   BestPos parse_bestpos();
   BestVel parse_bestvel();
   BestTime parse_time();
+  InsAtt parse_insatt();
 };
