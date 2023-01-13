@@ -107,7 +107,7 @@ void loop() {
             {
                 pos = gps.parse_bestpos();
 
-                QString msg = QString("\nBESTPOS: %1°E %2°N %3 m Age: %4 Stat: %9:%5-%6-%7-%8 Error %10-%11-%12\n")
+                QString msg = QString("\nBESTPOS: %1°N %2°E %3 m Age: %4 Stat: %9:%5-%6-%7-%8 Error %10-%11-%12\n")
                         .arg((double)pos.latitude,8,'f',4,QLatin1Char(' '))
                         .arg((double)pos.longitude,9,'f',4,QLatin1Char(' '))
                         .arg((double)pos.height,5,'f',1,QLatin1Char(' '))
