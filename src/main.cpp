@@ -136,11 +136,10 @@ void loop() {
                 if (!isnan(HEADING_OFFSET) && heading.heading != 0) {
                     QString msg = QString("BESTVEL+HEADING: hor %1 m/s at %2 deg   vert %3 m/s at %4 deg\n")
                             .arg((double)vel.hor_spd,3,'f',0,QLatin1Char(' '))
-                            .arg(fmodf(heading.heading+HEADING_OFFSET+180.0,360.0)-180.0,3,'f',0,QLatin1Char(' '))
+                            .arg(fmodf(heading.heading+HEADING_OFFSET,360.0),3,'f',0,QLatin1Char(' '))
                             .arg((double)vel.vert_spd,4,'f',1,QLatin1Char(' '))
                             .arg((double)heading.pitch,4,'f',1,QLatin1Char(' '));
                     QTextStream(stdout) << msg;
-                    //QTextStream(stdout) << "BESTVEL+HEADING: " << vel.hor_spd << " m/s at " << fmodf(heading.heading+HEADING_OFFSET+180.0,360.0)-180.0 << " deg. Vert vel: " << vel.vert_spd << " m/s at " << heading.pitch << " deg.\n";
                 } else {
                     QString msg = QString("BESTVEL: hor %1 m/s at %2 deg   vert %3 m/s\n")
                             .arg((double)vel.hor_spd,3,'f',0,QLatin1Char(' '))
@@ -156,7 +155,7 @@ void loop() {
                                                   (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
                                                   (char)gps_time.utc_hour, (char)gps_time.utc_min, ((double)gps_time.utc_ms)/1000.0,
                                                   pos.latitude, pos.longitude, pos.height*3.28083989501, // 3.28... to convert metres->feet
-                                                  fmodf(heading.heading+HEADING_OFFSET+180.0,360.0)-180.0, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
+                                                  fmodf(heading.heading+HEADING_OFFSET,360.0), vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
                                                   );
                         QTextStream(stdout) << "  To nav: " << output << "\n";
                         nav_socket->write(output.toUtf8());
