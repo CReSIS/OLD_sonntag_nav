@@ -151,21 +151,21 @@ void loop() {
                 if (nav_socket != NULL && nav_socket->state() == QAbstractSocket::ConnectedState) {
                     if (!isnan(HEADING_OFFSET) && heading.heading != 0) {
                         QString output =
-                                QString::asprintf("11,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f\n",
+                                QString::asprintf("20,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f,%f\n",
                                                   (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
                                                   (char)gps_time.utc_hour, (char)gps_time.utc_min, ((double)gps_time.utc_ms)/1000.0,
                                                   pos.latitude, pos.longitude, pos.height*3.28083989501, // 3.28... to convert metres->feet
-                                                  fmodf(heading.heading+HEADING_OFFSET,360.0), vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
+                                                  fmodf(heading.heading+HEADING_OFFSET,360.0), vel.hor_spd*1.94384449, vel.vert_spd*196.850393701,ins.roll //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
                                                   );
                         QTextStream(stdout) << "  To nav: " << output << "\n";
                         nav_socket->write(output.toUtf8());
                     } else {
                         QString output =
-                                QString::asprintf("11,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f\n",
+                                QString::asprintf("20,%04d%02d%02d,%02d%02d%06.3f,%f,%f,%f,%f,%f,%f,%f\n",
                                                   (int)gps_time.utc_year, (char)gps_time.utc_month, (char)gps_time.utc_day,
                                                   (char)gps_time.utc_hour, (char)gps_time.utc_min, ((double)gps_time.utc_ms)/1000.0,
                                                   pos.latitude, pos.longitude, pos.height*3.28083989501, // 3.28... to convert metres->feet
-                                                  vel.trk_gnd, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701 //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
+                                                  vel.trk_gnd, vel.hor_spd*1.94384449, vel.vert_spd*196.850393701,ins.roll //1.94... to convert m/s->knots, 196.85... to convert m/s->fpm
                                                   );
                         QTextStream(stdout) << "  To nav: " << output << "\n";
                         nav_socket->write(output.toUtf8());
